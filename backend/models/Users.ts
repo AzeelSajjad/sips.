@@ -13,6 +13,6 @@ const UserSchema: Schema = new Schema({
     password: {type: String, required: true, unique: true},
     profilePicture: {type: String, default: null},
     createdAt: {type: Date, default: Date}
-})
+});
 
 export default mongoose.model<IUSER>('User', UserSchema);
