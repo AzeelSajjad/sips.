@@ -13,6 +13,19 @@ const UserSchema: Schema = new Schema({
     password: {type: String, required: true, unique: true},
     profilePicture: {type: String, default: null},
     createdAt: {type: Date, default: Date}
+}, {
+    timestamps: true,
+    toJSON: {
+        virtuals: true,
+        versionKey: false,
+        transform: (_, ret) => {
+            ret.id = ret._id.toString();
+            delete ret._id;
+        }
+    },
+    toObject: {
+        virtuals: true,
+    },
 });
 
 export default mongoose.model<IUSER>('User', UserSchema);

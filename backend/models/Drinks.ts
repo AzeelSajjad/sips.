@@ -10,7 +10,7 @@ export interface IDRINKS extends Document {
 }
 
 const DrinksSchema: Schema = new Schema({
-    drink_name: {type: String, required: true},
+    drink: {type: String, required: true},
     category: {type: String},
     description: {type: String},
     price: {type: Number, required: true},
