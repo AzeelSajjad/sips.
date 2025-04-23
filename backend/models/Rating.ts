@@ -11,7 +11,7 @@ export interface IRATINGS extends Document {
 const RatingsSchema: Schema = new Schema({
     user: {type: Schema.Types.ObjectId, ref: 'User', required: true},
     drink: {type: Schema.Types.ObjectId, ref: 'Drinks', required: true},
-    rating: {type: Number, required: true},
+    rating: {type: Number, required: true, min: 1, max: 10},
     comment: {type: String},
     created_at: {type: Date, default: Date.now},
     image: {type: String}

@@ -1,11 +1,13 @@
 import mongoose, {Schema, Document} from "mongoose";
 export interface IDRINKS extends Document {
-    drink_name: string;
+    drink: string;
     category: string;
     description: string;
     price: number;
     image: string;
     created_at: Date;
+    average_rating: number;
+    total_ratings: number;
     cafe: mongoose.Types.ObjectId;
 }
 
@@ -16,6 +18,8 @@ const DrinksSchema: Schema = new Schema({
     price: {type: Number, required: true},
     image: {type: String},
     created_at: {type: Date, default: Date.now},
+    average_rating: { type: Number, default: 0, min: 0, max: 10},
+    total_ratings: { type: Number, default: 0},
     cafe: {type: Schema.Types.ObjectId, ref: 'Cafe', required: true}
 }, {
     timestamps: true,
