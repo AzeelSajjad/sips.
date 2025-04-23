@@ -6,6 +6,7 @@ export interface IDRINKS extends Document {
     price: number;
     image: string;
     created_at: Date;
+    cafe: mongoose.Types.ObjectId;
 }
 
 const DrinksSchema: Schema = new Schema({
@@ -14,7 +15,8 @@ const DrinksSchema: Schema = new Schema({
     description: {type: String},
     price: {type: Number, required: true},
     image: {type: String},
-    created_at: {type: Date, default: Date.now}
+    created_at: {type: Date, default: Date.now},
+    cafe: {type: Schema.Types.ObjectId, ref: 'Cafe', required: true}
 }, {
     timestamps: true,
     toJSON: {
