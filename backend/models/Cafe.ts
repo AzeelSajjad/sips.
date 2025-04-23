@@ -12,7 +12,7 @@ const CafeSchema: Schema = new Schema({
     name: {type: String, required: true},
     location: {type: String, required: true},
     description: {type: String},
-    createdAt: {type: Date, default: Date},
+    createdAt: {type: Date, default: Date.now},
     average_rating: {type: Number, required: true, default: 0},
     operating_hours: {type: String, required: true}
 }, {
