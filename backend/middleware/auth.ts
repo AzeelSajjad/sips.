@@ -19,3 +19,12 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
     }
 
 };
+
+export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+    if(req.userId != null){
+        next();
+    } else {
+        res.status(401).json({ message: 'Unauthorized.' });
+    }
+};
+
