@@ -52,6 +52,7 @@
     "@babel/core": "^7.25.2",
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.12",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/mongodb": "^4.0.7",
     "@types/mongoose": "^5.11.97",
     "@types/react": "~18.3.12",
