@@ -8,7 +8,7 @@ export const validateSignUp =  [
     (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
         if(!errors.isEmpty()){
-            res.status(401).json({ errors: errors.array() })
+            return res.status(401).json({ errors: errors.array() })
         }
         next()
 }];
@@ -19,7 +19,7 @@ export const validateLogin = [
     (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
         if(!errors.isEmpty()){
-            res.status(401).json({ errors: errors.array() })
+            return res.status(401).json({ errors: errors.array() })
         }
         next()
     }
