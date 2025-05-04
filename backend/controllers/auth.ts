@@ -3,3 +3,6 @@ import Users from '../models/Users';
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 
+export const signUp = (req: Request, res: Response, next: NextFunction) => {
+    
+};

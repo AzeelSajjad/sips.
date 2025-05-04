@@ -33,6 +33,7 @@
     "expo-system-ui": "~4.0.9",
     "expo-web-browser": "~14.0.2",
     "express": "^5.1.0",
+    "express-validator": "^7.2.1",
     "mongodb": "^6.16.0",
     "mongoose": "^8.13.2",
     "mongoose-validator": "^2.1.0",
