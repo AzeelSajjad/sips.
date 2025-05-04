@@ -12,3 +12,15 @@ export const validateSignUp =  [
         }
         next()
 }];
+
+export const validateLogin = [
+    body('email').isEmail().withMessage('Email is invalid.'),
+    body('password').isLength({min: 8}).withMessage('Password is invalid.'),
+    (req: Request, res: Response, next: NextFunction) => {
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            res.status(401).json({ errors: errors.array() })
+        }
+        next()
+    }
+];
