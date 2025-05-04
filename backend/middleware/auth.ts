@@ -12,10 +12,10 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
             req.userId = decoded.userId;
             next();
         } catch (error) {
-            res.status(403).json({ message: 'Invalid or expired token provided.' });
+            return res.status(403).json({ message: 'Invalid or expired token provided.' });
         }
     } else {
-        res.status(401).json({ message: 'No token provided.' });
+        return res.status(401).json({ message: 'No token provided.' });
     }
 
 };
@@ -24,7 +24,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
     if(req.userId != null){
         next();
     } else {
-        res.status(401).json({ message: 'Unauthorized.' });
+        return res.status(401).json({ message: 'Unauthorized.' });
     }
 };
 

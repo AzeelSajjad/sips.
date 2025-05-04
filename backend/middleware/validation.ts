@@ -24,3 +24,21 @@ export const validateLogin = [
         next()
     }
 ];
+
+export const validateChangePassword = [
+    body('currentPassword').isLength({min: 8}).withMessage('Password is invalid.'),
+    body('newPassword').isLength({min: 8}).withMessage('Password must be at least 8 characters.'),
+    body('confirmPassword').custom((value, {req}) => {
+        if(value !== req.body.newPassword){
+            throw new Error('Passwords do not match.')
+        }
+        return true;
+    }), 
+    (req: Request, res: Response, next: NextFunction) => {
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            return res.status(401).json({ errors: errors.array() })
+        }
+        next()
+    }
+];
