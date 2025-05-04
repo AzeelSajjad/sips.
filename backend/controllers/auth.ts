@@ -5,10 +5,33 @@ import jwt from 'jsonwebtoken'
 import { environment } from '../config/environment';
 
 export const signUp = async (req: Request, res: Response) => {
-    const {email, password, name} = req.body
-    const salt = await bcrypt.genSalt()
-    const hashed = await bcrypt.hash(password, salt)
-    const newUser = await Users.create({email, name, password: hashed})
-    const newJWT = jwt.sign({ userId: newUser._id }, environment.jwt.secret, { expiresIn: '1h' });
-    return res.status(201).json({ token: newJWT });
+    try {
+        const {email, password, name} = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = await Users.create({
+            email,
+            name,
+            password: hashedPassword
+        });
+        const token = jwt.sign(
+            { userId: newUser._id },
+            environment.jwt.secret,
+            { expiresIn: '1h' }
+        );
+        return res.status(201).json({
+            message: 'User registered successfully',
+            token,
+            user: {
+                id: newUser._id,
+                email: newUser.email,
+                name: newUser.name
+            }
+        });
+    } catch (error) {
+        console.error('Sign up error:', error);
+        return res.status(500).json({
+            message: 'Registration failed',
+            error: 'An error occurred during registration'
+        });
+    }
 };
