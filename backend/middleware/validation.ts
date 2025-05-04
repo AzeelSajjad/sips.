@@ -1,8 +1,15 @@
 import { Request, Response, NextFunction } from "express"
 import { body, validationResult } from 'express-validator'
+import Users from "../models/Users";
 
 export const validateSignUp =  [
-    body('email').isEmail().withMessage('Please enter a valid email.'),
+    body('email').isEmail().withMessage('Please enter a valid email.').custom(async (email) => {
+        const existingUser = await Users.findOne({ email })
+        if(existingUser){
+           throw new Error('Email already in use.')
+        }
+        return true
+    }),
     body('password').isLength({min: 8}).withMessage('Password must be at least 8 characters long.'),
     body('name').notEmpty().withMessage('Name should not be empty.'), 
     (req: Request, res: Response, next: NextFunction) => {
