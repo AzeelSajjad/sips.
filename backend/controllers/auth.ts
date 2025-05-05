@@ -19,7 +19,7 @@ export const signUp = async (req: Request, res: Response) => {
             { expiresIn: '1h' }
         );
         return res.status(201).json({
-            message: 'User registered successfully',
+            message: 'User registered successfully.',
             token,
             user: {
                 id: newUser._id,
@@ -30,8 +30,8 @@ export const signUp = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Sign up error:', error);
         return res.status(500).json({
-            message: 'Sign up failed',
-            error: 'An error occurred during sign up'
+            message: 'Sign up failed.',
+            error: 'An error occurred during sign up.'
         });
     }
 };
@@ -68,7 +68,38 @@ export const login = async (req: Request, res: Response) => {
         console.error('Login error:', error);
         return res.status(500).json({
             message: 'Login failed',
-            error: 'An error occurred during login'
+            error: 'An error occurred during login.'
+        });
+    }
+}
+
+export const changePassword = async (req: Request, res: Response) => {
+    try {
+        const {currPassword, newPassword} = req.body
+        const foundUser = await Users.findOne({ _id: req.userId })
+        if(!foundUser){
+            return res.status(401).json({message: 'User not found.'})
+        }
+        const foundPassword = await bcrypt.compare(currPassword, foundUser.password)
+        if(!foundPassword){
+            return res.status(401).json({message: 'Password is incorrect.'})
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        foundUser.password = hashedPassword
+        await foundUser.save()
+        return res.status(201).json({
+            message: 'Password change successful.',
+            user: {
+                id: foundUser._id,
+                email: foundUser.email,
+                name: foundUser.name
+            }
+        });
+    } catch (error) {
+        console.error('Password error:', error);
+        return res.status(500).json({
+            message: 'Change Password failed.',
+            error: 'An error occurred during the change password.'
         });
     }
 }
