@@ -18,7 +18,7 @@ export const signUp = async (req: Request, res: Response) => {
             environment.jwt.secret,
             { expiresIn: '1h' }
         );
-        return res.status(201).json({
+         res.status(201).json({
             message: 'User registered successfully.',
             token,
             user: {
@@ -29,7 +29,7 @@ export const signUp = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Sign up error:', error);
-        return res.status(500).json({
+        res.status(500).json({
             message: 'Sign up failed.',
             error: 'An error occurred during sign up.'
         });
@@ -44,18 +44,20 @@ export const login = async (req: Request, res: Response) => {
             {name: identifier}
         ]});
         if(!foundUser){
-            return res.status(401).json({message: 'Invalid credentials.'})
+            res.status(401).json({message: 'Invalid credentials.'})
+            return
         }
         const foundPassword = await bcrypt.compare(password, foundUser.password)
         if(!foundPassword){
-            return res.status(401).json({message: 'Invalid credentials.'})
+            res.status(401).json({message: 'Invalid credentials.'})
+            return
         }
         const token = jwt.sign(
             { userId: foundUser._id},
             environment.jwt.secret,
             { expiresIn: '1h'}
         )
-        return res.status(200).json({
+        res.status(200).json({
             message: 'Login successful',
             token,
             user: {
@@ -66,7 +68,7 @@ export const login = async (req: Request, res: Response) => {
         })
     } catch (error) {
         console.error('Login error:', error);
-        return res.status(500).json({
+        res.status(500).json({
             message: 'Login failed',
             error: 'An error occurred during login.'
         });
@@ -78,16 +80,18 @@ export const changePassword = async (req: Request, res: Response) => {
         const {currPassword, newPassword} = req.body
         const foundUser = await Users.findOne({ _id: req.userId })
         if(!foundUser){
-            return res.status(401).json({message: 'User not found.'})
+            res.status(401).json({message: 'User not found.'})
+            return
         }
         const foundPassword = await bcrypt.compare(currPassword, foundUser.password)
         if(!foundPassword){
-            return res.status(401).json({message: 'Password is incorrect.'})
+            res.status(401).json({message: 'Password is incorrect.'})
+            return
         }
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         foundUser.password = hashedPassword
         await foundUser.save()
-        return res.status(201).json({
+        res.status(201).json({
             message: 'Password change successful.',
             user: {
                 id: foundUser._id,
@@ -97,7 +101,7 @@ export const changePassword = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Password error:', error);
-        return res.status(500).json({
+        res.status(500).json({
             message: 'Change Password failed.',
             error: 'An error occurred during the change password.'
         });
