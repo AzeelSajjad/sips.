@@ -9,3 +9,5 @@ router.post('/signup', validateSignUp, signUp)
 router.post('/login', validateLogin, login)
 
 router.patch('/change-password', verifyToken, requireAuth, validateChangePassword, changePassword)
+
+export default router

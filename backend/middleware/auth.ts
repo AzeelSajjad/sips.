@@ -1,7 +1,7 @@
 import {Request, Response, NextFunction} from 'express';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 import { environment } from '../config/environment';
-import '../types/auth.d.ts';
+import '../types/auth';
 
 export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
