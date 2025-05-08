@@ -4,14 +4,15 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 
 dotenv.config();
-console.log("Loaded MONGO_URI:", process.env.MONGO_URI);
+console.log("Loaded MONGO_URI:", "mongodb://localhost:27017/sipsdb");
+console.log("JWT_SECRET:", process.env.JWT_SECRET);
 
 const app = express(); 
 
 app.use(express.json());
 app.use("/auth", authRoutes);
 
-mongoose.connect(process.env.MONGO_URI!)
+mongoose.connect("mongodb://localhost:27017/sipsdb")
   .then(() => {
     console.log("✅ Connected to MongoDB");
 

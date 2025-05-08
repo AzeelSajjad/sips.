@@ -31,7 +31,7 @@ export const signUp = async (req: Request, res: Response) => {
         console.error('Sign up error:', error);
         res.status(500).json({
             message: 'Sign up failed.',
-            error: 'An error occurred during sign up.'
+            error: error instanceof Error ? error.message : 'An error occurred during sign up.'
         });
     }
 };
