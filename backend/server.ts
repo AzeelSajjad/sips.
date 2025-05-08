@@ -1,23 +1,32 @@
-import express from "express";
-import authRoutes from "./routes/auth"; 
-import mongoose from "mongoose";
 import dotenv from "dotenv";
+import path from "path";
 
-dotenv.config();
-console.log("Loaded MONGO_URI:", "mongodb://localhost:27017/sipsdb");
+const envPath = path.resolve(process.cwd(), '../.env');
+console.log("Looking for .env file at:", envPath);
+const result = dotenv.config({ path: envPath });
+console.log("Dotenv config result:", result);
+
+import express from "express";
+import mongoose from "mongoose";
+import authRoutes from "./routes/auth";
+import { environment } from "./config/environment";
+
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("MONGO_URI:", process.env.MONGO_URI);
 console.log("JWT_SECRET:", process.env.JWT_SECRET);
 
-const app = express(); 
+const app = express();
 
 app.use(express.json());
 app.use("/auth", authRoutes);
 
-mongoose.connect("mongodb://localhost:27017/sipsdb")
+mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/sipsdb")
   .then(() => {
     console.log("✅ Connected to MongoDB");
 
-    app.listen(8081, () => {
-      console.log("🚀 Server running on http://localhost:8081");
+    const port = process.env.PORT || 8081;
+    app.listen(port, () => {
+      console.log(`🚀 Server running on http://localhost:${port}`);
     });
   })
   .catch((err) => {
