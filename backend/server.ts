@@ -1,20 +1,24 @@
-
 import express from "express";
 import authRoutes from "./routes/auth"; 
-import { Request, Response, NextFunction } from "express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 
+dotenv.config();
+console.log("Loaded MONGO_URI:", process.env.MONGO_URI);
 
-const app = express();
+const app = express(); 
+
 app.use(express.json());
-
 app.use("/auth", authRoutes);
 
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong.' });
-});
+mongoose.connect(process.env.MONGO_URI!)
+  .then(() => {
+    console.log("✅ Connected to MongoDB");
 
-
-app.listen(8081, () => {
-  console.log("Server running on http://localhost:8081");
-});
+    app.listen(8081, () => {
+      console.log("🚀 Server running on http://localhost:8081");
+    });
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err);
+  });
