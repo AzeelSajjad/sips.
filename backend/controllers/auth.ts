@@ -77,13 +77,13 @@ export const login = async (req: Request, res: Response) => {
 
 export const changePassword = async (req: Request, res: Response) => {
     try {
-        const {currPassword, newPassword} = req.body
+        const {currentPassword, newPassword} = req.body
         const foundUser = await Users.findOne({ _id: req.userId })
         if(!foundUser){
             res.status(401).json({message: 'User not found.'})
             return
         }
-        const foundPassword = await bcrypt.compare(currPassword, foundUser.password)
+        const foundPassword = await bcrypt.compare(currentPassword, foundUser.password)
         if(!foundPassword){
             res.status(401).json({message: 'Password is incorrect.'})
             return

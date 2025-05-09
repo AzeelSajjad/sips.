@@ -4,6 +4,7 @@ export interface IUSER extends Document {
     email: string;
     password: string;
     profilePicture : string;
+    rankedDrinks: mongoose.Types.ObjectId
     createdAt: Date;
 }
 
@@ -12,6 +13,7 @@ const UserSchema: Schema = new Schema({
     email: {type: String, required: true, unique: true},
     password: {type: String, required: true},
     profilePicture: {type: String, default: null},
+    rankedDrinks: [{ type: Schema.Types.ObjectId, ref: 'Drinks' }],
     createdAt: {type: Date, default: Date.now }
 }, {
     timestamps: true,
