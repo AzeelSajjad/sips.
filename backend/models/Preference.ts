@@ -1,5 +1,11 @@
 import mongoose, {Schema, Document} from "mongoose"
 
+export enum ratingContext {
+    Loved = 'loved',
+    Liked = 'liked',
+    Disliked = 'disliked'
+}
+
 export interface IPREFERENCE extends Document {
     user: mongoose.Types.ObjectId;
     preferred: mongoose.Types.ObjectId;
@@ -11,6 +17,11 @@ const PreferenceSchema: Schema = new Schema({
     user: {type: mongoose.Types.ObjectId, ref: 'User', required: true},
     preferred: {type: mongoose.Types.ObjectId, ref: 'Drinks', required: true},
     against: {type: mongoose.Types.ObjectId, ref: 'Drinks', required: true},
+    ratingContext : {
+        type: String,
+        enum: Object.values(ratingContext),
+        required: true
+    },
     createdAt: {type: Date, default: Date.now}
 },{
     timestamps: true,
@@ -26,3 +37,5 @@ const PreferenceSchema: Schema = new Schema({
         virtuals: true,
     },
 });
+
+export default mongoose.model<IPREFERENCE>('Preference', PreferenceSchema)
