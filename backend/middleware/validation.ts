@@ -22,7 +22,7 @@ export const validateSignUp =  [
 }];
 
 export const validateLogin = [
-    body('email').isEmail().withMessage('Email is invalid.'),
+    body('identifier').notEmpty().withMessage('Email is invalid.'),
     body('password').isLength({min: 8}).withMessage('Password is invalid.').matches(/^(?=.*[A-Za-z])(?=.*\d)/).withMessage('Password must contain at least one letter and one number'),
     (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
