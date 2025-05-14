@@ -36,6 +36,10 @@ export const initializeRating = async (req: Request, res: Response) => {
             drink: foundDrink
         })
     } catch (error) {
-        
+        console.error('Error initializing drink rating:', error)
+        res.status(500).json({
+            message: 'Failed to initialize drink rating',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        })
     }
 }
