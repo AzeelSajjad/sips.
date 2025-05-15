@@ -44,6 +44,7 @@ export const initializeRating = async (req: Request, res: Response) => {
     }
 }
 
-export const calculateExpectedOutcome = async (req: Request, res: Response) => {
-    
+export const calculateExpectedOutcome = (ratingA: number, ratingB: number): number => {
+    let E = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 3));
+    return E;
 }
