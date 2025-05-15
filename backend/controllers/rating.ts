@@ -100,6 +100,8 @@ export const recordPreference = async (req: Request, res: Response) => {
             res.status(400).json({message: 'Against Drink not found'})
             return
         }
+        const prefCurrRating = foundPrefDrink.average_rating
+        const againstCurrRating = foundAgainstDrink.average_rating
         
     } catch (error) {
         
