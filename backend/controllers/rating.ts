@@ -48,3 +48,23 @@ export const calculateExpectedOutcome = (ratingA: number, ratingB: number): numb
     let E = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 3));
     return E;
 }
+
+export const updateRatingsPair = (
+    ratingPreferred: number,
+    ratingNonPreferred: number,
+    ratingContext: string,
+    kfactor: number = .5
+) : { newPrefRating: number, newNonPrefRating: number } => {
+    if(ratingContext === 'loved'){
+        kfactor = .7
+    } else if(ratingContext === 'liked'){
+        kfactor = .5
+    } else if(ratingContext === 'disliked'){
+        kfactor = .3
+    }
+    const expectedOutcome = calculateExpectedOutcome(ratingPreferred, ratingNonPreferred)
+    return {
+        newPrefRating: ratingPreferred + kfactor * (1 - expectedOutcome),
+        newNonPrefRating: ratingNonPreferred + kfactor * (0 - expectedOutcome)
+    }
+}
