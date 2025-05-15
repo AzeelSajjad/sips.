@@ -63,8 +63,10 @@ export const updateRatingsPair = (
         kfactor = .3
     }
     const expectedOutcome = calculateExpectedOutcome(ratingPreferred, ratingNonPreferred)
+    const boundedPrefRating = Math.max(1, Math.min(10, ratingPreferred + kfactor * (1 - expectedOutcome)));
+    const boundedNonPrefRating = Math.max(1, Math.min(10, ratingNonPreferred + kfactor * (0 - expectedOutcome)));
     return {
-        newPrefRating: ratingPreferred + kfactor * (1 - expectedOutcome),
-        newNonPrefRating: ratingNonPreferred + kfactor * (0 - expectedOutcome)
+        newPrefRating: boundedPrefRating,
+        newNonPrefRating: boundedNonPrefRating
     }
 }
