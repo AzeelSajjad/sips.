@@ -12,7 +12,7 @@ export const initializeRating = async (req: Request, res: Response) => {
         const {ratingContext} = req.body
         const validDrink = await mongoose.Types.ObjectId.isValid(drinkId)
         if(!validDrink){
-            res.status(401).json({message: 'Invalid DrinkID'})
+            res.status(400).json({message: 'Invalid DrinkID'})
             return
         }
         let initialRating = 5.0
@@ -25,7 +25,7 @@ export const initializeRating = async (req: Request, res: Response) => {
         }
         const foundDrink = await Drinks.findById(drinkId)
         if(!foundDrink){
-            res.status(401).json({message: 'Drink not found'})
+            res.status(400).json({message: 'Drink not found'})
             return
         }
         foundDrink.average_rating = initialRating
@@ -42,4 +42,8 @@ export const initializeRating = async (req: Request, res: Response) => {
             error: error instanceof Error ? error.message : 'Unknown error'
         })
     }
+}
+
+export const calculateExpectedOutcome = async (req: Request, res: Response) => {
+    
 }
