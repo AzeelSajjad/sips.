@@ -3,7 +3,7 @@ import Preference, { IPREFERENCE, ratingContext } from '../models/Preference';
 import Ratings, { IRATINGS } from '../models/Rating';
 import Drinks, { IDRINKS } from '../models/Drinks';
 import Users, { IUSER } from '../models/Users';
-import mongoose from 'mongoose';
+import mongoose, { mongo } from 'mongoose';
 import { environment } from '../config/environment';
 
 export const initializeRating = async (req: Request, res: Response) => {
@@ -68,5 +68,40 @@ export const updateRatingsPair = (
     return {
         newPrefRating: boundedPrefRating,
         newNonPrefRating: boundedNonPrefRating
+    }
+}
+
+export const recordPreference = async (req: Request, res: Response) => {
+    try {
+        const {userId} = req.body
+        const {prefDrink, againstDrink, context} = req.body
+        const validUID = await mongoose.Types.ObjectId.isValid(userId)
+        const validPref = await mongoose.Types.ObjectId.isValid(prefDrink)
+        const validAgainst = await mongoose.Types.ObjectId.isValid(againstDrink)
+        if(!validUID){
+            res.status(400).json({message: 'User ID is invalid'})
+            return
+        }
+        if(!validPref){
+            res.status(400).json({message: 'PrefDrink ID is invalid'})
+            return
+        }
+        if(!validAgainst){
+            res.status(400).json({message: 'AgainstDrink ID is invalid'})
+            return
+        }
+        const foundPrefDrink = await Drinks.findById(prefDrink)
+        const foundAgainstDrink = await Drinks.findById(againstDrink)
+        if(!foundPrefDrink){
+            res.status(400).json({message: 'PrefDrink not found'})
+            return
+        }
+        if(!foundAgainstDrink){
+            res.status(400).json({message: 'Against Drink not found'})
+            return
+        }
+        
+    } catch (error) {
+        
     }
 }
