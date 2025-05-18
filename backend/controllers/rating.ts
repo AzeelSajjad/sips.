@@ -102,8 +102,23 @@ export const recordPreference = async (req: Request, res: Response) => {
         }
         const prefCurrRating = foundPrefDrink.average_rating
         const againstCurrRating = foundAgainstDrink.average_rating
-        
+        const newRatings = updateRatingsPair(prefCurrRating, againstCurrRating, context)
+        foundPrefDrink.average_rating = newRatings.newPrefRating
+        foundAgainstDrink.average_rating = newRatings.newNonPrefRating
+        const newList = await Preference.create({
+            userId,
+            foundPrefDrink,
+            foundAgainstDrink,
+            context
+        })
+        res.status(201).json({
+            message: 'Drink was succesfully ranked'
+        })
     } catch (error) {
-        
+        console.error('Error ranking Drink:', error)
+        res.status(500).json({
+            message: 'Failed to rank Drink',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        })
     }
 }
