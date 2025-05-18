@@ -4,7 +4,7 @@ export interface IUSER extends Document {
     email: string;
     password: string;
     profilePicture : string;
-    rankedDrinks: mongoose.Types.ObjectId;
+    rankedDrinks: mongoose.Types.ObjectId[];
     createdAt: Date;
 }
 
