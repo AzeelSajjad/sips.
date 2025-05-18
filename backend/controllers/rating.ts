@@ -73,15 +73,10 @@ export const updateRatingsPair = (
 
 export const recordPreference = async (req: Request, res: Response) => {
     try {
-        const {userId} = req.body
+        const {userId} = req
         const {prefDrink, againstDrink, context} = req.body
-        const validUID = await mongoose.Types.ObjectId.isValid(userId)
         const validPref = await mongoose.Types.ObjectId.isValid(prefDrink)
         const validAgainst = await mongoose.Types.ObjectId.isValid(againstDrink)
-        if(!validUID){
-            res.status(400).json({message: 'User ID is invalid'})
-            return
-        }
         if(!validPref){
             res.status(400).json({message: 'PrefDrink ID is invalid'})
             return
@@ -105,11 +100,13 @@ export const recordPreference = async (req: Request, res: Response) => {
         const newRatings = updateRatingsPair(prefCurrRating, againstCurrRating, context)
         foundPrefDrink.average_rating = newRatings.newPrefRating
         foundAgainstDrink.average_rating = newRatings.newNonPrefRating
+        foundPrefDrink.total_ratings = (foundPrefDrink.total_ratings || 0) + 1
+        foundAgainstDrink.total_ratings = (foundAgainstDrink.total_ratings || 0) + 1
         const newList = await Preference.create({
-            userId,
-            foundPrefDrink,
-            foundAgainstDrink,
-            context
+            user: userId,
+            preferred: foundPrefDrink,
+            against: foundAgainstDrink,
+            ratingContext: context
         })
         res.status(201).json({
             message: 'Drink was succesfully ranked'
