@@ -102,14 +102,29 @@ export const recordPreference = async (req: Request, res: Response) => {
         foundAgainstDrink.average_rating = newRatings.newNonPrefRating
         foundPrefDrink.total_ratings = (foundPrefDrink.total_ratings || 0) + 1
         foundAgainstDrink.total_ratings = (foundAgainstDrink.total_ratings || 0) + 1
-        const newList = await Preference.create({
+        await foundPrefDrink.save()
+        await foundAgainstDrink.save()
+        const newPreference = await Preference.create({
             user: userId,
             preferred: foundPrefDrink,
             against: foundAgainstDrink,
             ratingContext: context
         })
+        const user = await Users.findById(userId);
+        if (user) {
+            if (!user.rankedDrinks.includes(prefDrink)) {
+                user.rankedDrinks.push(prefDrink);
+            }
+            if (!user.rankedDrinks.includes(againstDrink)) {
+                user.rankedDrinks.push(againstDrink);
+            }
+            await user.save();
+        }
         res.status(201).json({
-            message: 'Drink was succesfully ranked'
+            message: 'Drink was successfully ranked',
+            preference: newPreference,
+            preferredDrink: foundPrefDrink,
+            againstDrink: foundAgainstDrink
         })
     } catch (error) {
         console.error('Error ranking Drink:', error)
