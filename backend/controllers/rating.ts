@@ -136,12 +136,18 @@ export const recordPreference = async (req: Request, res: Response) => {
 }
 
 export const getPairForComparison = async (req: Request, res: Response) => {
-    const {userId} = req
-    const {cafeId} = req.body
-    const validCafeID = await mongoose.Types.ObjectId.isValid(cafeId)
-    if(!validCafeID){
-        res.status(400).json({message: 'Cafe ID is invalid'})
-        return
+    try {
+        const {userId} = req
+        const {cafeId} = req.body
+        const validCafeID = await mongoose.Types.ObjectId.isValid(cafeId)
+        if(!validCafeID){
+            res.status(400).json({message: 'Cafe ID is invalid'})
+            return
+        }
+        const foundDrink = await Drinks.find({cafe: cafeId})
+        const foundUserNaked = await Preference.find({user: userId})
+        
+    } catch (error) {
+        
     }
-    
 }
