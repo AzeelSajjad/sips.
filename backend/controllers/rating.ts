@@ -146,7 +146,7 @@ export const getPairForComparison = async (req: Request, res: Response) => {
         }
         const foundDrink = await Drinks.find({cafe: cafeId})
         const foundUserNaked = await Preference.find({user: userId})
-        
+        const userList = await Users.findById(userId).populate('rankedDrinks')
     } catch (error) {
         
     }
