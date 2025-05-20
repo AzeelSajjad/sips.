@@ -148,6 +148,12 @@ export const getPairForComparison = async (req: Request, res: Response) => {
         const foundUserNaked = await Preference.find({user: userId})
         const userList = await Users.findById(userId).populate('rankedDrinks')
         const rankedDrinksID = userList?.rankedDrinks.map(drink => drink._id.toString()) || []
+        const {currDrinkID} = req.body
+        const validCurrDrinkID = await mongoose.Types.ObjectId.isValid(currDrinkID)
+        if(!validCurrDrinkID){
+            res.status(400).json({message: 'Current Drink ID is invalid'})
+            return
+        }
     } catch (error) {
         
     }
