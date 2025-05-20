@@ -137,24 +137,66 @@ export const recordPreference = async (req: Request, res: Response) => {
 
 export const getPairForComparison = async (req: Request, res: Response) => {
     try {
-        const {userId} = req
-        const {cafeId} = req.body
-        const validCafeID = await mongoose.Types.ObjectId.isValid(cafeId)
-        if(!validCafeID){
-            res.status(400).json({message: 'Cafe ID is invalid'})
+        const { userId } = req
+        const { cafeId, currDrinkID, ratingContext } = req.body
+        const validCafeID = mongoose.Types.ObjectId.isValid(cafeId)
+        const validCurrDrinkID = mongoose.Types.ObjectId.isValid(currDrinkID)
+        if (!validCafeID) {
+            res.status(400).json({ message: 'Cafe ID is invalid' })
             return
         }
-        const foundDrink = await Drinks.find({cafe: cafeId})
-        const foundUserNaked = await Preference.find({user: userId})
-        const userList = await Users.findById(userId).populate('rankedDrinks')
-        const rankedDrinksID = userList?.rankedDrinks.map(drink => drink._id.toString()) || []
-        const {currDrinkID} = req.body
-        const validCurrDrinkID = await mongoose.Types.ObjectId.isValid(currDrinkID)
-        if(!validCurrDrinkID){
-            res.status(400).json({message: 'Current Drink ID is invalid'})
+        if (!validCurrDrinkID) {
+            res.status(400).json({ message: 'Current Drink ID is invalid' })
             return
         }
+        const currentDrink = await Drinks.findById(currDrinkID)
+        if (!currentDrink) {
+            res.status(400).json({ message: 'Current drink not found' })
+            return
+        }
+        const user = await Users.findById(userId).populate('rankedDrinks');
+        if (!user) {
+            res.status(404).json({ message: 'User not found' })
+            return
+        }
+        const rankedDrinks = user.rankedDrinks as unknown as IDRINKS[]
+        if (rankedDrinks.length === 0) {
+            res.status(400).json({ message: 'User has no ranked drinks for comparison' })
+            return;
+        }
+        const sortedDrinks = rankedDrinks
+            .filter(d => d.cafe.toString() === cafeId)
+            .sort((a, b) => b.average_rating - a.average_rating)
+        if (sortedDrinks.length === 0) {
+            res.status(400).json({ message: 'No ranked drinks in this cafe for comparison' })
+            return;
+        }
+        const n = sortedDrinks.length
+        const q1Index = Math.floor(n * 0.25)
+        const q3Index = Math.floor(n * 0.75)
+        let candidates: IDRINKS[] = []
+        if (ratingContext === 'loved') {
+            candidates = sortedDrinks.slice(0, q1Index);
+            if (candidates.length === 0) candidates = sortedDrinks.slice(0, Math.min(3, n))
+        } else if (ratingContext === 'liked') {
+            candidates = sortedDrinks.slice(q1Index, q3Index)
+            if (candidates.length === 0) candidates = sortedDrinks.slice(Math.floor(n / 3), Math.floor(n / 3) + 3)
+        } else if (ratingContext === 'disliked') {
+            candidates = sortedDrinks.slice(q3Index)
+            if (candidates.length === 0) candidates = sortedDrinks.slice(-3)
+        }
+        const midIndex = Math.floor(candidates.length / 2);
+        const chosenDrink = candidates[midIndex]
+        res.status(200).json({
+            message: 'Comparison pair fetched successfully',
+            currentDrink,
+            rankedDrinkForComparison: chosenDrink,
+        })
     } catch (error) {
-        
+        console.error('Error fetching pair for comparison:', error)
+        res.status(500).json({
+            message: 'Failed to fetch comparison pair',
+            error: error instanceof Error ? error.message : 'Unknown error',
+        })
     }
 }
