@@ -165,15 +165,11 @@ export const getPairForComparison = async (req: Request, res: Response) => {
         }
         const sortedDrinks = [...rankedDrinks]
             .sort((a, b) => b.average_rating - a.average_rating)
-        const filteredSortedDrinks = sortedDrinks.filter(d => 
-            d._id.toString() !== currDrinkID
-        )
-        
+        const filteredSortedDrinks = sortedDrinks.filter(d => d.id !== currDrinkID)
         if (filteredSortedDrinks.length === 0) {
             res.status(400).json({ message: 'No other ranked drinks available for comparison' })
             return;
         }
-
         const n = filteredSortedDrinks.length
         const q1Index = Math.floor(n * 0.25)
         const q3Index = Math.floor(n * 0.75)
