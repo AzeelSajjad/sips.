@@ -31,9 +31,18 @@ export const searchCafeByName = async (req: Request, res: Response) => {
                 const places = newRes.data.results
                 const placeName = places[0].name
                 const address = places[0].vicinity
-                const placeId = response.data.results[0].place_id
+                const placeId = places[0].place_id
                 const place_lng = places[0].geometry.location.lng
                 const place_lat = places[0].geometry.location.lat
+                const responseObj = {
+                    name: placeName,
+                    address,
+                    placeId,
+                    latitude: place_lat,
+                    longitude: place_lng
+                  }
+                res.status(200).json(responseObj)
+                return
             } else {
                 res.status(404).json({message: 'Location not found'})
             }
@@ -42,6 +51,7 @@ export const searchCafeByName = async (req: Request, res: Response) => {
             return
         }
     } catch (error) {
-        
+        console.error(error)
+        res.status(500).json({ message: 'Server error' })
     }
 }
