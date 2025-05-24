@@ -55,3 +55,24 @@ export const searchCafeByName = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' })
     }
 }
+
+export const getDrinksByCafe = async (req: Request, res: Response) => {
+    try {
+        const {placeId} = req.query
+        if(!placeId || typeof placeId !== 'string' || placeId.trim().length === 0){
+            res.status(400).json({message: 'Invalid placeId'})
+            return
+        }
+        const drinks = await Drinks.find({placeId: placeId})
+        if(drinks.length === 0){
+            res.status(200).json({message: 'Be the first to add a drink'})
+            return
+        } else {
+            res.status(200).json(drinks)
+            return
+        }
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({message: 'Server error'})
+    }
+}
