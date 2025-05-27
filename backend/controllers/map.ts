@@ -80,7 +80,7 @@ export const getDrinksByCafe = async (req: Request, res: Response) => {
 
 export const addDrinkToCafe = async (req: Request, res: Response) => {
     try {
-        const {placeId, drinkName, category, description} = req.body
+        const {placeId, drinkName, category, description, price, image} = req.body
         const userId = req.userId
         if(!placeId || !drinkName || typeof placeId !== 'string' || placeId.trim().length === 0 || typeof drinkName !== 'string' || drinkName.trim().length === 0){
             res.status(400).json({message: 'Invalid placeId or drinkName'})
@@ -91,21 +91,26 @@ export const addDrinkToCafe = async (req: Request, res: Response) => {
             res.status(400).json({message: 'Drink already exists'})
             return
         }
-        const newDrink = {
+        const newDrink = await Drinks.create({
             drinkName,
             placeId,
             category,
             description,
-            userId
-        }
+            userId,
+            price,
+            image
+        })
         res.status(201).json({
             message: 'Drink was succesfully added',
-            drink: drinkName,
-            cafe: placeId,
-            category: category,
-            description: description
+            drink: newDrink.drink,
+            cafe: newDrink.cafe,
+            category: newDrink.category,
+            description: newDrink.description,
+            price: newDrink.price,
+            image: newDrink.image
         })
     } catch (error) {
-        
+        console.error(error)
+        res.status(500).json({message: 'Failed to add Drink'})
     }
 }
