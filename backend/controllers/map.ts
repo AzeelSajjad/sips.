@@ -3,6 +3,7 @@ import Cafe from '../models/Cafe'
 import Users from '../models/Users'
 import Drinks from '../models/Drinks'
 import mongoose from 'mongoose'
+import { verifyToken } from '../middleware/auth'
 import dotenv from 'dotenv'
 dotenv.config()
 import axios from 'axios'
@@ -80,6 +81,23 @@ export const getDrinksByCafe = async (req: Request, res: Response) => {
 export const addDrinkToCafe = async (req: Request, res: Response) => {
     try {
         const {placeId, drinkName, category, description} = req.body
+        const userId = req.userId
+        if(!placeId || !drinkName || typeof placeId !== 'string' || placeId.trim().length === 0 || typeof drinkName !== 'string' || drinkName.trim().length === 0){
+            res.status(400).json({message: 'Invalid placeId or drinkName'})
+            return
+        }
+        const sameDrink = await Drinks.findOne({placeId: placeId, drinkName: drinkName})
+        if(sameDrink){
+            res.status(400).json({message: 'Drink already exists'})
+            return
+        }
+        const newDrink = {
+            drinkName,
+            placeId,
+            category,
+            description,
+            userId
+        }
         
     } catch (error) {
         
