@@ -76,3 +76,12 @@ export const getDrinksByCafe = async (req: Request, res: Response) => {
         res.status(500).json({message: 'Server error'})
     }
 }
+
+export const addDrinkToCafe = async (req: Request, res: Response) => {
+    try {
+        const {placeId, drinkName, category, description} = req.body
+        
+    } catch (error) {
+        
+    }
+}
