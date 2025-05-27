@@ -80,20 +80,20 @@ export const getDrinksByCafe = async (req: Request, res: Response) => {
 
 export const addDrinkToCafe = async (req: Request, res: Response) => {
     try {
-        const {placeId, drinkName, category, description, price, image} = req.body
+        const {cafe, drink, category, description, price, image} = req.body
         const userId = req.userId
-        if(!placeId || !drinkName || typeof placeId !== 'string' || placeId.trim().length === 0 || typeof drinkName !== 'string' || drinkName.trim().length === 0){
-            res.status(400).json({message: 'Invalid placeId or drinkName'})
+        if(!cafe || !drink || typeof cafe !== 'string' || cafe.trim().length === 0 || typeof drink !== 'string' || drink.trim().length === 0){
+            res.status(400).json({message: 'Invalid cafe or drink'})
             return
         }
-        const sameDrink = await Drinks.findOne({placeId: placeId, drinkName: drinkName})
+        const sameDrink = await Drinks.findOne({cafe: cafe, drink: drink})
         if(sameDrink){
             res.status(400).json({message: 'Drink already exists'})
             return
         }
         const newDrink = await Drinks.create({
-            drinkName,
-            placeId,
+            drink,
+            cafe,
             category,
             description,
             userId,
