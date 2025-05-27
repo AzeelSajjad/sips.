@@ -98,7 +98,13 @@ export const addDrinkToCafe = async (req: Request, res: Response) => {
             description,
             userId
         }
-        
+        res.status(201).json({
+            message: 'Drink was succesfully added',
+            drink: drinkName,
+            cafe: placeId,
+            category: category,
+            description: description
+        })
     } catch (error) {
         
     }
