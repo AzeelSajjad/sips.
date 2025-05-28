@@ -118,11 +118,22 @@ export const addDrinkToCafe = async (req: Request, res: Response) => {
 export const getCafeDetails = async (req:Request, res: Response) => {
     try {
         const {placeId} = req.params
-        const validPlaceId = await mongoose.Types.ObjectId.isValid(placeId)
-        if(!validPlaceId){
+        if(!placeId || typeof placeId !== 'string' || placeId.trim().length === 0){
             res.status(400).json({message: 'Invalid placeId'})
+            return
         }
-        
+        const api_key = process.env.GOOGLE_MAP_API_KEY
+        const fields = [
+            'name',
+            'formatted_address', 
+            'formatted_phone_number',
+            'website',
+            'rating',
+            'opening_hours',
+            'photos'
+        ].join(',')
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${api_key}`
+        const response = await axios.get(detailsUrl)
     } catch (error) {
         
     }
