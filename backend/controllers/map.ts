@@ -101,7 +101,7 @@ export const addDrinkToCafe = async (req: Request, res: Response) => {
             image
         })
         res.status(201).json({
-            message: 'Drink was succesfully added',
+            message: 'Drink was successfully added',
             drink: newDrink.drink,
             cafe: newDrink.cafe,
             category: newDrink.category,
@@ -112,5 +112,18 @@ export const addDrinkToCafe = async (req: Request, res: Response) => {
     } catch (error) {
         console.error(error)
         res.status(500).json({message: 'Failed to add Drink'})
+    }
+}
+
+export const getCafeDetails = async (req:Request, res: Response) => {
+    try {
+        const {placeId} = req.params
+        const validPlaceId = await mongoose.Types.ObjectId.isValid(placeId)
+        if(!validPlaceId){
+            res.status(400).json({message: 'Invalid placeId'})
+        }
+        
+    } catch (error) {
+        
     }
 }
