@@ -134,7 +134,30 @@ export const getCafeDetails = async (req:Request, res: Response) => {
         ].join(',')
         const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${api_key}`
         const response = await axios.get(detailsUrl)
+        if(response.data.result.length > 0){
+            const places = response.data.result
+            const name = places.name
+            const address = places.address
+            const phone = places.phone
+            const website = places.website
+            const rating = places.rating
+            const hours = places.hours
+            const responseObj = {
+                name,
+                address,
+                phone,
+                website,
+                rating,
+                hours
+            }
+            res.status(201).json(responseObj)
+            return
+        } else {
+            res.status(400).json({message: 'Location not found'})
+            return
+        }
     } catch (error) {
-        
+        console.error(error)
+        res.status(500).json({message: 'Failed to get places details'})
     }
 }
