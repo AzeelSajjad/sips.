@@ -6,7 +6,7 @@ import mongoose from 'mongoose'
 import { verifyToken } from '../middleware/auth'
 import dotenv from 'dotenv'
 dotenv.config()
-import axios from 'axios'
+import axios, { all } from 'axios'
 
 export const searchCafeByName = async (req: Request, res: Response) => {
     try {
@@ -100,5 +100,46 @@ export const getCafeDetails = async (req:Request, res: Response) => {
     } catch (error) {
         console.error(error)
         res.status(500).json({message: 'Failed to get places details'})
+    }
+}
+
+export const getCafesWithFilters = async (req: Request, res: Response) => {
+    try {
+        const {loc, drinks, radius, openNow} = req.query
+        if(!loc || typeof loc !== 'string'){
+            res.status(400).json({message: 'Location not found'})
+            return
+        }
+        const drinksArray = drinks ? (drinks as string).split(',').map(d => d.trim()) : []
+        const allowedDrinks = ['matcha', 'coffee', 'boba', 'tea', 'espresso', 'latte', 'cappuccino']
+        const invalidDrinks = drinksArray.filter(drink => !allowedDrinks.includes(drink.toLowerCase()))
+        if(invalidDrinks.length > 0){
+            res.status(400).json({message: `Invalid drink types: ${invalidDrinks.join(', ')}`})
+        }
+        const searchRadius = radius ? parseInt(radius as string) : 3000
+        const searchOpen = openNow === 'true'
+        const api_key = process.env.GOOGLE_MAP_API_KEY
+        const encodedLoc = encodeURIComponent(loc as string)
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedLoc}&key=${api_key}`
+        const response = await axios.get(geocodeUrl)
+        if(response.data.results.length > 0){
+            const location = response.data.results[0].geometry.location as { lat: number; lng: number }
+            const longitude = location.lng
+            const latitude = location.lat
+            const type = 'cafe'
+            const keywordString = drinksArray.join(' OR ')
+            const encodedKeyword = encodeURIComponent(keywordString)
+            const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?keyword=${encodedKeyword}&location=${latitude},${longitude}&radius=${searchRadius}&type=${type}&key=${api_key}`
+            const newRes = await axios.get(placesUrl)
+            if(newRes.data.results.length > 0){
+
+            } else {
+                
+            }
+        } else {
+
+        }
+    } catch (error) {
+        
     }
 }
