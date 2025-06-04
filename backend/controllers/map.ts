@@ -115,6 +115,7 @@ export const getCafesWithFilters = async (req: Request, res: Response) => {
         const invalidDrinks = drinksArray.filter(drink => !allowedDrinks.includes(drink.toLowerCase()))
         if(invalidDrinks.length > 0){
             res.status(400).json({message: `Invalid drink types: ${invalidDrinks.join(', ')}`})
+            return
         }
         const searchRadius = radius ? parseInt(radius as string) : 3000
         const searchOpen = openNow === 'true'
@@ -132,14 +133,28 @@ export const getCafesWithFilters = async (req: Request, res: Response) => {
             const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?keyword=${encodedKeyword}&location=${latitude},${longitude}&radius=${searchRadius}&type=${type}&key=${api_key}`
             const newRes = await axios.get(placesUrl)
             if(newRes.data.results.length > 0){
-
+                const places = newRes.data.results
+                const responseArray = places.map((cafe: any) => {
+                    return {
+                        name: cafe.name,
+                        address: cafe.vicinity,
+                        placeId: cafe.place_id,
+                        latitude: cafe.geometry.location.lat,
+                        longitude: cafe.geometry.location.lng
+                    }
+                })
+                res.status(200).json(responseArray)
+                return
             } else {
-                
+                res.status(404).json({message: 'No nearby cafes have that drink/drinks'})
+                return
             }
         } else {
-
+            res.status(404).json({message: 'No nearby cafes have that drink/drinks'})
+            return
         }
     } catch (error) {
-        
+        console.error(error)
+        res.status(500).json({message: 'Locations not found'})
     }
 }
