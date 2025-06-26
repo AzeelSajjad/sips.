@@ -3,8 +3,8 @@ import { initializeRating, recordPreference, getPairForComparison } from '../con
 import { verifyToken } from '../middleware/auth'
 
 const router = Router()
-router.post('/init/:drinkId', initializeRating)
-router.post('/preference', recordPreference)
-router.post('/compare', getPairForComparison)
+router.post('/init/:drinkId', verifyToken, initializeRating)
+router.post('/preference', verifyToken, recordPreference)
+router.post('/compare', verifyToken, getPairForComparison)
 
 export default router
