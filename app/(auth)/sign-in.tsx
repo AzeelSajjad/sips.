@@ -14,7 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 // Prefer EXPO_PUBLIC_API_URL so it works on device/emulator without code changes
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8081";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
 const SignIn = () => {
   const router = useRouter();

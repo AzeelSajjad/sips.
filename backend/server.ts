@@ -7,6 +7,7 @@ const result = dotenv.config({ path: envPath });
 console.log("Dotenv config result:", result);
 
 import express from "express";
+import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/auth";
 import { environment } from "./config/environment";
@@ -17,6 +18,7 @@ console.log("JWT_SECRET:", process.env.JWT_SECRET);
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use("/auth", authRoutes);
 

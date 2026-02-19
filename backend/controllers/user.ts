@@ -1,6 +1,5 @@
 import { Request, Response } from 'express'
-import Users from '../models/Users'         
-import Drinks from '../models/Drinks'
+import Users from '../models/Users'
 import Friends from '../models/Friends'
 import mongoose from 'mongoose'
 
@@ -12,7 +11,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
             res.status(400).json({message: 'Invalid userId'})
             return
         }
-        const foundUser = await Users.findById(validId).populate('rankedDrinks')
+        const foundUser = await Users.findById(userId).populate('rankedDrinks.drink')
         if(!foundUser){
             res.status(400).json({message: 'No User Found'})
             return
