@@ -30,25 +30,21 @@ export const searchCafeByName = async (req: Request, res: Response) => {
             const newRes = await axios.get(placesUrl)
             if(newRes.data.results.length > 0){
                 const places = newRes.data.results
-                const placeName = places[0].name
-                const address = places[0].vicinity
-                const placeId = places[0].place_id
-                const place_lng = places[0].geometry.location.lng
-                const place_lat = places[0].geometry.location.lat
-                const responseObj = {
-                    name: placeName,
-                    address,
-                    placeId,
-                    latitude: place_lat,
-                    longitude: place_lng
-                  }
-                res.status(200).json(responseObj)
+                const responseArray = places.map((cafe: any) => ({
+                    name: cafe.name,
+                    address: cafe.vicinity,
+                    placeId: cafe.place_id,
+                    latitude: cafe.geometry.location.lat,
+                    longitude: cafe.geometry.location.lng
+                }))
+                res.status(200).json(responseArray)
                 return
             } else {
-                res.status(404).json({message: 'Location not found'})
+                res.status(200).json([])
+                return
             }
         } else {
-            res.status(404).json({message: 'Location not found'})
+            res.status(200).json([])
             return
         }
     } catch (error) {

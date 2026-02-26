@@ -4,6 +4,7 @@ export interface IRankedDrink {
     drink: mongoose.Types.ObjectId;
     rating: number;
     comparisons: number;
+    ratingContext: 'loved' | 'liked' | 'disliked';
 }
 
 export interface IUSER extends Document {
@@ -18,7 +19,8 @@ export interface IUSER extends Document {
 const RankedDrinkSchema: Schema = new Schema({
     drink: { type: Schema.Types.ObjectId, ref: 'Drinks', required: true },
     rating: { type: Number, required: true, min: 1, max: 10, default: 5.0 },
-    comparisons: { type: Number, default: 0 }
+    comparisons: { type: Number, default: 0 },
+    ratingContext: { type: String, enum: ['loved', 'liked', 'disliked'], required: true, default: 'liked' }
 }, { _id: false });
 
 const UserSchema: Schema = new Schema({

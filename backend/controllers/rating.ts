@@ -47,20 +47,17 @@ export const initializeRating = async (req: Request, res: Response) => {
             return
         }
 
-        // Set initial rating based on context
-        let initialRating = 5.0
-        if (ratingContext === 'loved') {
-            initialRating = 7.5
-        } else if (ratingContext === 'liked') {
-            initialRating = 5.0
-        } else if (ratingContext === 'disliked') {
-            initialRating = 2.5
-        }
+        // Count existing drinks in this tier to calculate starting rating
+        const tierCount = user.rankedDrinks.filter(
+            rd => rd.ratingContext === ratingContext
+        ).length
+        const initialRating = Math.max(10.0 - (tierCount * 0.1), 5.0)
 
         user.rankedDrinks.push({
             drink: new mongoose.Types.ObjectId(drinkId),
-            rating: initialRating,
-            comparisons: 0
+            rating: parseFloat(initialRating.toFixed(1)),
+            comparisons: 0,
+            ratingContext
         })
         await user.save()
 
@@ -203,12 +200,12 @@ export const recordPreference = async (req: Request, res: Response) => {
         )
 
         if (!entryA) {
-            entryA = { drink: new mongoose.Types.ObjectId(drinkA), rating: 5.0, comparisons: 0 }
+            entryA = { drink: new mongoose.Types.ObjectId(drinkA), rating: 5.0, comparisons: 0, ratingContext: context }
             user.rankedDrinks.push(entryA)
             entryA = user.rankedDrinks[user.rankedDrinks.length - 1]
         }
         if (!entryB) {
-            entryB = { drink: new mongoose.Types.ObjectId(drinkB), rating: 5.0, comparisons: 0 }
+            entryB = { drink: new mongoose.Types.ObjectId(drinkB), rating: 5.0, comparisons: 0, ratingContext: context }
             user.rankedDrinks.push(entryB)
             entryB = user.rankedDrinks[user.rankedDrinks.length - 1]
         }
@@ -326,9 +323,9 @@ export const getPairForComparison = async (req: Request, res: Response) => {
             return
         }
 
-        // Filter out the current drink
+        // Filter to only drinks in the same tier, excluding the current drink
         const otherDrinks = user.rankedDrinks.filter(
-            rd => rd.drink.toString() !== currDrinkID.toString()
+            rd => rd.drink.toString() !== currDrinkID.toString() && rd.ratingContext === ratingContext
         )
 
         if (otherDrinks.length === 0) {

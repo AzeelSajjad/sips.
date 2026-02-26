@@ -10,6 +10,10 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/auth";
+import drinkRoutes from "./routes/drink";
+import ratingRoutes from "./routes/rating";
+import userRoutes from "./routes/user";
+import mapRoutes from "./routes/map";
 import { environment } from "./config/environment";
 
 console.log("NODE_ENV:", process.env.NODE_ENV);
@@ -21,6 +25,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/auth", authRoutes);
+app.use("/drink", drinkRoutes);
+app.use("/rating", ratingRoutes);
+app.use("/user", userRoutes);
+app.use("/map", mapRoutes);
 
 mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/sipsdb")
   .then(() => {

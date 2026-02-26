@@ -11,11 +11,18 @@ export const getUserInfo = async (req: Request, res: Response) => {
             res.status(400).json({message: 'Invalid userId'})
             return
         }
-        const foundUser = await Users.findById(userId).populate('rankedDrinks.drink')
+        const foundUser = await Users.findById(userId).populate({
+            path: 'rankedDrinks.drink',
+            populate: { path: 'cafe', select: 'name' }
+        })
         if(!foundUser){
             res.status(400).json({message: 'No User Found'})
             return
         }
+        console.log('--- GET USER DEBUG ---')
+        console.log('userId:', userId)
+        console.log('rankedDrinks count:', foundUser.rankedDrinks?.length)
+        console.log('rankedDrinks:', JSON.stringify(foundUser.rankedDrinks))
         const userFriend = await Friends.find({user: userId}).populate('friends')
         res.status(200).json({
             message: 'User info retrieved',
