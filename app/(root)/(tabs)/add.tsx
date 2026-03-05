@@ -39,8 +39,15 @@ interface DrinkTemplate {
   description: string;
 }
 
+interface ComparisonDrink {
+  id: string;
+  drink: string;
+  category: string;
+  cafe?: { id: string; name: string } | string;
+}
+
 type RatingContext = 'loved' | 'liked' | 'disliked' | null;
-type Step = 'cafe' | 'drink' | 'rate';
+type Step = 'cafe' | 'drink' | 'rate' | 'compare';
 
 // ─── Add Screen ─────────────────────────────────────────────────────────────────
 const Add = () => {
@@ -72,6 +79,14 @@ const Add = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Step 4: Comparison (binary search)
+  const [addedDrinkId, setAddedDrinkId] = useState<string | null>(null);
+  const [currentDrink, setCurrentDrink] = useState<ComparisonDrink | null>(null);
+  const [comparisonDrink, setComparisonDrink] = useState<ComparisonDrink | null>(null);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [comparisonStep, setComparisonStep] = useState(0);
+  const [totalComparisons, setTotalComparisons] = useState(0);
 
   // ─── Effects ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -156,6 +171,14 @@ const Add = () => {
     setPrice('');
     setSubmitSuccess(false);
     setSubmitError(null);
+    setAddedDrinkId(null);
+    setCurrentDrink(null);
+    setComparisonDrink(null);
+    setComparisonStep(0);
+    setTotalComparisons(0);
+    bsLow.current = 0;
+    bsHigh.current = 0;
+    bsMid.current = 0;
     fadeAnim.setValue(1);
   };
 
@@ -210,7 +233,7 @@ const Add = () => {
       const headers = { Authorization: `Bearer ${token}` };
 
       // Add drink to cafe and initialize rating in one call
-      await axios.post(
+      const addRes = await axios.post(
         `${API_URL}/drink`,
         {
           placeId: selectedCafe.placeId,
@@ -227,13 +250,12 @@ const Add = () => {
         { headers }
       );
 
-      setSubmitSuccess(true);
+      const drinkId = addRes.data.drinkId;
+      setAddedDrinkId(drinkId);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Show success briefly, then navigate to home
-      setTimeout(() => {
-        resetAll();
-        router.replace('/(root)/(tabs)/home');
-      }, 1800);
+
+      // Try to fetch a comparison pair
+      await fetchComparison(drinkId, ratingContext, headers);
     } catch (err: any) {
       const errMsg = err?.response?.data?.message || err?.message || 'Unknown error';
       Alert.alert('Submit Error', errMsg);
@@ -241,6 +263,133 @@ const Add = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // ─── Comparison logic (binary search) ────────────────────────────────────────
+  const bsLow = useRef(0);
+  const bsHigh = useRef(0);
+  const bsMid = useRef(0);
+
+  const fetchComparison = async (drinkId: string, context: string, headers: any, low?: number, high?: number) => {
+    try {
+      setComparisonLoading(true);
+      const body: any = { currDrinkID: drinkId, ratingContext: context };
+      if (typeof low === 'number') body.low = low;
+      if (typeof high === 'number') body.high = high;
+
+      const res = await axios.post(`${API_URL}/rating/compare`, body, { headers });
+
+      const current = res.data.currentDrink;
+      const comparison = res.data.comparisonDrink;
+      const tierSize = res.data.tierSize;
+
+      // Store binary search bounds from backend
+      bsLow.current = res.data.low;
+      bsHigh.current = res.data.high;
+      bsMid.current = res.data.mid;
+
+      // On first call, set total comparisons = ceil(log2(tierSize))
+      if (typeof low === 'undefined') {
+        const total = Math.max(1, Math.ceil(Math.log2(tierSize)));
+        setTotalComparisons(total);
+        setComparisonStep(1);
+      } else {
+        setComparisonStep(prev => prev + 1);
+      }
+
+      setCurrentDrink({
+        id: current.id || current._id,
+        drink: current.drink,
+        category: current.category,
+        cafe: current.cafe,
+      });
+      setComparisonDrink({
+        id: comparison.id || comparison._id,
+        drink: comparison.drink,
+        category: comparison.category,
+        cafe: comparison.cafe,
+      });
+
+      animateToStep('compare');
+    } catch {
+      // No other drinks to compare — go straight to success
+      setSubmitSuccess(true);
+      setTimeout(() => {
+        resetAll();
+        router.replace('/(root)/(tabs)/ranks');
+      }, 1800);
+    } finally {
+      setComparisonLoading(false);
+    }
+  };
+
+  const handlePickWinner = async (winner: 'drinkA' | 'drinkB') => {
+    if (!currentDrink || !comparisonDrink || !ratingContext || !addedDrinkId) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const token = await AsyncStorage.getItem('authToken');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      // Record the preference (Elo update)
+      await axios.post(
+        `${API_URL}/rating/preference`,
+        {
+          drinkA: currentDrink.id,
+          drinkB: comparisonDrink.id,
+          winner,
+          context: ratingContext,
+        },
+        { headers }
+      );
+
+      // Binary search: narrow the range
+      // Sorted descending, so "new drink wins" = it's better = search upper half
+      let newLow = bsLow.current;
+      let newHigh = bsHigh.current;
+
+      if (winner === 'drinkA') {
+        // New drink beat the mid drink → search upper half (higher ratings)
+        newHigh = bsMid.current - 1;
+      } else {
+        // New drink lost → search lower half (lower ratings)
+        newLow = bsMid.current + 1;
+      }
+
+      if (newLow > newHigh) {
+        // Search complete — position found
+        finishAndNavigate();
+      } else {
+        await fetchComparison(addedDrinkId, ratingContext, headers, newLow, newHigh);
+      }
+    } catch (err: any) {
+      console.error('Comparison error:', err?.response?.data || err?.message);
+      finishAndNavigate();
+    }
+  };
+
+  const handleSkipComparison = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Skip = move down by default (treat as loss)
+    const newLow = bsMid.current + 1;
+    const newHigh = bsHigh.current;
+
+    if (newLow > newHigh || !addedDrinkId || !ratingContext) {
+      finishAndNavigate();
+      return;
+    }
+
+    const token = await AsyncStorage.getItem('authToken');
+    const headers = { Authorization: `Bearer ${token}` };
+    await fetchComparison(addedDrinkId, ratingContext, headers, newLow, newHigh);
+  };
+
+  const finishAndNavigate = () => {
+    setSubmitSuccess(true);
+    animateToStep('rate');
+    setTimeout(() => {
+      resetAll();
+      router.replace('/(root)/(tabs)/ranks');
+    }, 1800);
   };
 
   // ─── Render helpers ─────────────────────────────────────────────────────────
@@ -254,7 +403,7 @@ const Add = () => {
         <View style={styles.headerButton} />
       )}
       <Text style={styles.headerTitle}>
-        {step === 'cafe' ? 'Find a Cafe' : step === 'drink' ? 'Pick a Drink' : 'Rate It'}
+        {step === 'cafe' ? 'Find a Cafe' : step === 'drink' ? 'Pick a Drink' : step === 'rate' ? 'Rate It' : 'Compare'}
       </Text>
       <TouchableOpacity style={styles.headerButton} onPress={resetAll}>
         <Ionicons name="close" size={24} color="#1A1A1A" />
@@ -559,6 +708,88 @@ const Add = () => {
     );
   };
 
+  // ─── Step 4: Compare ─────────────────────────────────────────────────────────
+  const renderCompareStep = () => {
+    if (comparisonLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color="#8B4513" size="large" />
+        </View>
+      );
+    }
+
+    if (!currentDrink || !comparisonDrink) return null;
+
+    const tierColor = ratingContext === 'loved' ? '#2E7D32' : ratingContext === 'liked' ? '#F9A825' : '#C62828';
+
+    return (
+      <View style={styles.compareContainer}>
+        <Text style={styles.compareQuestion}>Which do you prefer?</Text>
+        <Text style={styles.compareSubtitle}>
+          Step {comparisonStep} of ~{totalComparisons}
+        </Text>
+
+        <View style={styles.compareRow}>
+          {/* Drink A — the one you just added */}
+          <TouchableOpacity
+            style={styles.compareCard}
+            activeOpacity={0.7}
+            onPress={() => handlePickWinner('drinkA')}
+          >
+            <View style={[styles.compareIconCircle, { backgroundColor: tierColor + '15' }]}>
+              <Ionicons name={getCategoryIcon(currentDrink.category) as any} size={28} color={tierColor} />
+            </View>
+            <Text style={styles.compareDrinkName} numberOfLines={2}>{currentDrink.drink}</Text>
+            <View style={styles.compareCafeRow}>
+              <Ionicons name="location-outline" size={12} color="#999" />
+              <Text style={styles.compareCafeName} numberOfLines={1}>
+                {typeof currentDrink.cafe === 'object' ? currentDrink.cafe?.name : currentDrink.cafe || ''}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* OR divider */}
+          <View style={styles.compareOrContainer}>
+            <View style={styles.compareOrLine} />
+            <View style={[styles.compareOrBadge, { backgroundColor: tierColor }]}>
+              <Text style={styles.compareOrText}>OR</Text>
+            </View>
+            <View style={styles.compareOrLine} />
+          </View>
+
+          {/* Drink B — from existing ranked list */}
+          <TouchableOpacity
+            style={styles.compareCard}
+            activeOpacity={0.7}
+            onPress={() => handlePickWinner('drinkB')}
+          >
+            <View style={[styles.compareIconCircle, { backgroundColor: tierColor + '15' }]}>
+              <Ionicons name={getCategoryIcon(comparisonDrink.category) as any} size={28} color={tierColor} />
+            </View>
+            <Text style={styles.compareDrinkName} numberOfLines={2}>{comparisonDrink.drink}</Text>
+            <View style={styles.compareCafeRow}>
+              <Ionicons name="location-outline" size={12} color="#999" />
+              <Text style={styles.compareCafeName} numberOfLines={1}>
+                {typeof comparisonDrink.cafe === 'object' ? comparisonDrink.cafe?.name : comparisonDrink.cafe || ''}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Bottom actions */}
+        <View style={styles.compareActions}>
+          <TouchableOpacity style={styles.compareSkipButton} onPress={handleSkipComparison}>
+            <Text style={styles.compareSkipText}>Too tough</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.compareDoneButton} onPress={finishAndNavigate}>
+            <Text style={styles.compareDoneText}>Skip all</Text>
+            <Ionicons name="arrow-forward" size={16} color="#8B4513" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   // ─── Main render ────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -570,13 +801,14 @@ const Add = () => {
 
         {/* Progress bar */}
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: step === 'cafe' ? '33%' : step === 'drink' ? '66%' : '100%' }]} />
+          <View style={[styles.progressFill, { width: step === 'cafe' ? '25%' : step === 'drink' ? '50%' : step === 'rate' ? '75%' : '100%' }]} />
         </View>
 
         <Animated.View style={[{ flex: 1 }, { opacity: fadeAnim }]}>
           {step === 'cafe' && renderCafeStep()}
           {step === 'drink' && renderDrinkStep()}
           {step === 'rate' && renderRateStep()}
+          {step === 'compare' && renderCompareStep()}
         </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -1134,6 +1366,124 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#EF5350',
     fontWeight: '500',
+  },
+
+  // Compare step
+  compareContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 32,
+    alignItems: 'center',
+  },
+  compareQuestion: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginBottom: 6,
+  },
+  compareSubtitle: {
+    fontSize: 13,
+    color: '#999',
+    marginBottom: 32,
+  },
+  compareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    width: '100%',
+  },
+  compareCard: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+    borderWidth: 2,
+    borderColor: '#F0EDE8',
+    minHeight: 180,
+  },
+  compareIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  compareDrinkName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  compareCafeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  compareCafeName: {
+    fontSize: 12,
+    color: '#999',
+    flex: 1,
+  },
+  compareOrContainer: {
+    alignItems: 'center',
+    width: 36,
+  },
+  compareOrLine: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E8E4E0',
+  },
+  compareOrBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 6,
+  },
+  compareOrText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  compareActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 36,
+  },
+  compareSkipButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#F0EDE8',
+  },
+  compareSkipText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#666',
+  },
+  compareDoneButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#8B451315',
+  },
+  compareDoneText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#8B4513',
   },
 });
 

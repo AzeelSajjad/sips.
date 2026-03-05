@@ -107,8 +107,10 @@ export const addDrinkToCafe = async (req: Request, res: Response) => {
             rd => rd.ratingContext === ratingContext
         ).length
 
-        // First drink in tier = 10.0, then 9.9, 9.8, etc. Floor at 5.0
-        const initialRating = Math.max(10.0 - (tierCount * 0.1), 5.0)
+        // Each tier starts at a different base: loved=10.0, liked=7.0, disliked=4.0
+        // Subsequent drinks decrement by 0.1 within their tier
+        const tierBase = ratingContext === 'loved' ? 10.0 : ratingContext === 'liked' ? 7.0 : 4.0
+        const initialRating = Math.max(tierBase - (tierCount * 0.1), 1.0)
 
         if(!alreadyRanked){
             user.rankedDrinks.push({

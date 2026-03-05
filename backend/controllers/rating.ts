@@ -292,15 +292,14 @@ async function updateGlobalDrinkRating(drinkId: string) {
 }
 
 /**
- * Get a drink to compare against the current drink from the user's ranked list.
- * Pairing strategy adapts to list size:
- *   - Small lists (< 4): pick any other drink
- *   - Larger lists: use context-aware selection (loved→top, disliked→bottom, liked→middle)
+ * Get a drink to compare against using binary search.
+ * Frontend sends low/high bounds; backend returns the middle drink.
+ * Drinks are sorted by rating descending so index 0 = highest rated.
  */
 export const getPairForComparison = async (req: Request, res: Response) => {
     try {
         const { userId } = req
-        const { currDrinkID, ratingContext } = req.body
+        const { currDrinkID, ratingContext, low, high } = req.body
 
         if (!mongoose.Types.ObjectId.isValid(currDrinkID)) {
             res.status(400).json({ message: 'Current Drink ID is invalid' })
@@ -311,7 +310,7 @@ export const getPairForComparison = async (req: Request, res: Response) => {
             return
         }
 
-        const currentDrink = await Drinks.findById(currDrinkID)
+        const currentDrink = await Drinks.findById(currDrinkID).populate('cafe', 'name')
         if (!currentDrink) {
             res.status(400).json({ message: 'Current drink not found' })
             return
@@ -336,49 +335,29 @@ export const getPairForComparison = async (req: Request, res: Response) => {
             return
         }
 
-        let chosen: IRankedDrink
+        // Sort by rating descending (index 0 = best in tier)
+        const sorted = [...otherDrinks].sort((a, b) => b.rating - a.rating)
+        const tierSize = sorted.length
 
-        // For small lists, just pick randomly — not enough data for quartiles
-        if (otherDrinks.length < 4) {
-            chosen = otherDrinks[Math.floor(Math.random() * otherDrinks.length)]
-        } else {
-            // Sort by rating descending for quartile selection
-            const sorted = [...otherDrinks].sort((a, b) => b.rating - a.rating)
-            const n = sorted.length
+        // Use provided bounds or default to full range
+        const lo = (typeof low === 'number') ? low : 0
+        const hi = (typeof high === 'number') ? high : tierSize - 1
 
-            let candidates: IRankedDrink[]
-
-            if (ratingContext === 'loved') {
-                // Compare against the top quarter (highest rated)
-                candidates = sorted.slice(0, Math.max(1, Math.floor(n * 0.25)))
-            } else if (ratingContext === 'disliked') {
-                // Compare against the bottom quarter (lowest rated)
-                candidates = sorted.slice(Math.floor(n * 0.75))
-            } else {
-                // 'liked' — compare against the middle half
-                const start = Math.floor(n * 0.25)
-                const end = Math.ceil(n * 0.75)
-                candidates = sorted.slice(start, end)
-            }
-
-            // Fallback if slice produced empty (shouldn't happen, but safe)
-            if (candidates.length === 0) {
-                candidates = sorted
-            }
-
-            chosen = candidates[Math.floor(Math.random() * candidates.length)]
-        }
+        // Binary search: pick the middle
+        const mid = Math.floor((lo + hi) / 2)
+        const chosen = sorted[Math.min(mid, tierSize - 1)]
 
         // Populate the chosen drink's full details
-        const comparisonDrink = await Drinks.findById(chosen.drink)
+        const comparisonDrink = await Drinks.findById(chosen.drink).populate('cafe', 'name')
 
         res.status(200).json({
             message: 'Comparison pair fetched successfully',
             currentDrink,
             comparisonDrink,
-            comparisonRating: chosen.rating,
-            comparisonComparisons: chosen.comparisons,
-            totalRankedDrinks: user.rankedDrinks.length
+            low: lo,
+            high: hi,
+            mid,
+            tierSize,
         })
     } catch (error) {
         console.error('Error fetching pair for comparison:', error)
