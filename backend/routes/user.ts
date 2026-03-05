@@ -3,7 +3,7 @@ import { getUserInfo, addFriend } from '../controllers/user';
 
 const router = Router();
 
-router.get('/user/:userId', getUserInfo);
+router.get('/:userId', getUserInfo);
 router.post('/friends', addFriend);
 
 export default router;

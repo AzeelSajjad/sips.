@@ -99,6 +99,47 @@ export const getCafeDetails = async (req:Request, res: Response) => {
     }
 }
 
+export const getRatedCafes = async (req: Request, res: Response) => {
+    try {
+        const { userId } = req
+        const user = await Users.findById(userId).populate({
+            path: 'rankedDrinks.drink',
+            populate: { path: 'cafe', select: 'name placeId latitude longitude address' }
+        })
+        if (!user) {
+            res.status(404).json({ message: 'User not found' })
+            return
+        }
+
+        // Group by cafe, pick the highest-rated drink per cafe
+        const cafeMap = new Map<string, any>()
+        for (const rd of user.rankedDrinks) {
+            const drink = rd.drink as any
+            if (!drink || !drink.cafe) continue
+            const cafe = drink.cafe
+            const cafeId = cafe._id?.toString() || cafe.placeId
+            const existing = cafeMap.get(cafeId)
+            if (!existing || rd.rating > existing.topRating) {
+                cafeMap.set(cafeId, {
+                    name: cafe.name,
+                    placeId: cafe.placeId,
+                    address: cafe.address,
+                    latitude: cafe.latitude,
+                    longitude: cafe.longitude,
+                    topDrink: drink.drink,
+                    topRating: rd.rating,
+                    ratingContext: rd.ratingContext,
+                })
+            }
+        }
+
+        res.status(200).json(Array.from(cafeMap.values()))
+    } catch (error) {
+        console.error('Error fetching rated cafes:', error)
+        res.status(500).json({ message: 'Failed to fetch rated cafes' })
+    }
+}
+
 export const getCafesWithFilters = async (req: Request, res: Response) => {
     try {
         const {loc, drinks, radius, openNow} = req.query

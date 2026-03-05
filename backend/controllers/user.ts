@@ -23,10 +23,13 @@ export const getUserInfo = async (req: Request, res: Response) => {
         console.log('userId:', userId)
         console.log('rankedDrinks count:', foundUser.rankedDrinks?.length)
         console.log('rankedDrinks:', JSON.stringify(foundUser.rankedDrinks))
-        const userFriend = await Friends.find({user: userId}).populate('friends')
+        const userFriend = await Friends.find({user: userId}).populate('friend', 'name email profilePicture')
         res.status(200).json({
             message: 'User info retrieved',
             name: foundUser.name,
+            email: foundUser.email,
+            profilePicture: foundUser.profilePicture,
+            createdAt: foundUser.createdAt,
             rankedDrinks: foundUser.rankedDrinks,
             friends: userFriend.map(f => f.friend)
         })

@@ -85,7 +85,7 @@ const Ranks = () => {
       const userId = authUser.id;
       if (!userId) return;
 
-      const res = await axios.get(`${API_URL}/user/user/${userId}`, {
+      const res = await axios.get(`${API_URL}/user/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
